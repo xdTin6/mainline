@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #0c0d0f;
+  --color-surface: #141518;
+  --color-elevated: #1b1d21;
+  --color-fg: #eceae6;
+  --color-muted: #b7b2a8;
+  --color-subtle: #8d887f;
+  --color-line: #2a2c31;
+  --color-line-strong: #3c3f46;
+  --color-accent: #eceae6;
+  --color-accent-fg: #141311;
+  --color-danger: #c45c4a;
+
+  --font-display: "Newsreader", "Iowan Old Style", Palatino, Georgia, serif;
+  --font-sans: "IBM Plex Sans", "Avenir Next", "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    background: var(--color-bg);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--color-bg);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.5;
+    overflow-x: hidden;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-fg);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--color-fg);
+    color: var(--color-accent-fg);
+  }
+}
+
+.press {
+  transition: scale 150ms ease-out;
+}
+
+.press:active:not(:disabled) {
+  scale: 0.96;
+}
+
+.rise {
+  animation: rise 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise {
+    animation: none;
+  }
+
+  .press,
+  .press:active {
+    transition: none;
+    scale: 1;
+  }
+
+  .animate-pulse {
+    animation: none;
+  }
+}

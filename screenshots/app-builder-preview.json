@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/?q=&lang=&sort=new",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Mainline",
+      "hasCanvas": false,
+      "bodyTextLen": 1991,
+      "bodyTextHash": "094861f0a6dea732c8441980c25c0f411f7e0a4bb366202d51b44d6b879ee7d2",
+      "bodyTextPrefix": "M Mainline Index Bench Search the record Publish What got built.",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Mainline",
+      "hasCanvas": false,
+      "bodyTextLen": 1998,
+      "bodyTextHash": "07b05b0ddf2fa3a37b896bdaca0746a1c0d471a500eec529ecf76db7027b0420",
+      "bodyTextPrefix": "M Mainline Search the record What got built. A record of project",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-preview.json"
+}

@@ -387,8 +387,10 @@
       import {
         createUserWithEmailAndPassword,
         getAuth,
+        GoogleAuthProvider,
         onAuthStateChanged,
         signInWithEmailAndPassword,
+        signInWithPopup,
         signOut,
         updateProfile,
       } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
@@ -722,6 +724,8 @@
         const signup = state.authMode === "signup";
         if (state.user) return `<section class="auth-panel"><h1>You are signed in.</h1><p>The record is open. Publish when you have something that runs.</p><a class="button primary" href="#/">Back to the record</a></section>`;
         return `<section class="auth-panel"><h1>${signup ? "Create your account" : "Sign in"}</h1><p>${signup ? "Claim a place on the record. Your projects and profile will be public." : "The record is open. Sign in to publish, star, follow, or leave a note."}</p>
+          <button class="button" type="button" data-action="google-signin" style="width:100%;margin-top:22px">Continue with Google</button>
+          <p class="subtle" style="text-align:center;margin:14px 0">or use email</p>
           <form class="form" data-form="auth">
             ${signup ? formField("Name", "displayName", "", { max: 60, required: true, type: "text" }) : ""}
             ${formField("Email", "email", "", { max: 254, required: true, type: "email" })}
@@ -868,6 +872,9 @@
           "auth/invalid-email": "Enter a valid email address.",
           "auth/invalid-credential": "The email or password is not correct.",
           "auth/weak-password": "Choose a password with at least six characters.",
+          "auth/popup-closed-by-user": "Google sign-in was closed before it finished.",
+          "auth/popup-blocked": "Your browser blocked the Google sign-in window. Allow pop-ups and try again.",
+          "auth/account-exists-with-different-credential": "An account already exists with this email. Sign in with that method first.",
           "auth/network-request-failed": "Network request failed. Check your connection and try again.",
           "database/permission-denied": "Firebase denied this request. Publish the provided Realtime Database rules.",
           "PERMISSION_DENIED": "Firebase denied this request. Publish the provided Realtime Database rules.",
@@ -1104,6 +1111,12 @@
           } else if (action === "auth-mode") {
             state.authMode = state.authMode === "login" ? "signup" : "login";
             render();
+          } else if (action === "google-signin") {
+            button.disabled = true;
+            button.textContent = "Opening Google…";
+            await signInWithPopup(auth, new GoogleAuthProvider());
+            toast("Signed in with Google.");
+            location.hash = "#/";
           } else if (action === "signout") {
             await signOut(auth);
             toast("Signed out.");
@@ -1112,6 +1125,10 @@
             watchDatabase();
           }
         } catch (error) {
+          if (action === "google-signin" && button.isConnected) {
+            button.disabled = false;
+            button.textContent = "Continue with Google";
+          }
           toast(firebaseError(error));
         }
       });

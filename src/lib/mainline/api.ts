@@ -43,13 +43,15 @@ function card(row: Row): ProjectCard {
     authorHandle: text(row.handle),
     authorName: text(row.display_name),
     authorRole: text(row.role),
+    authorBio: text(row.bio),
+    authorAvatarImage: text(row.avatar_image),
   };
 }
 
 const FEED_SELECT = `
   select
     p.id, p.title, p.summary, p.language, p.tags, p.repo_url, p.demo_url, p.created_at, p.updated_at,
-    a.handle, a.display_name, a.role,
+    a.handle, a.display_name, a.role, a.bio, a.avatar_image,
     (select count(*)::int from stars s where s.project_id = p.id) as star_count,
     (select count(*)::int from notes n where n.project_id = p.id) as note_count
   from projects p
@@ -121,7 +123,7 @@ export const listDirectory = createServerFn({ method: "GET" }).handler(async ():
       from projects p
     `,
     sql<Row>`
-      select a.handle, a.display_name, a.role, a.bio, a.location,
+      select a.handle, a.display_name, a.avatar_image, a.role, a.bio, a.location,
         (select count(*)::int from projects p where p.user_id = a.user_id) as project_count,
         (select count(*)::int from follows f where f.following_id = a.user_id) as follower_count
       from profiles a
@@ -163,6 +165,7 @@ export const listDirectory = createServerFn({ method: "GET" }).handler(async ():
     makers: makers.map((row) => ({
       handle: text(row.handle),
       displayName: text(row.display_name),
+      avatarImage: text(row.avatar_image),
       role: text(row.role),
       bio: text(row.bio),
       location: text(row.location),
@@ -179,7 +182,7 @@ export const getProject = createServerFn({ method: "GET" })
     const rows = await sql<Row>`
       select p.id, p.user_id, p.title, p.summary, p.body, p.language, p.tags,
         p.repo_url, p.demo_url, p.created_at, p.updated_at,
-        a.handle, a.display_name, a.role, a.bio, a.location,
+        a.handle, a.display_name, a.role, a.bio, a.avatar_image, a.location,
         (select count(*)::int from stars s where s.project_id = p.id) as star_count,
         (select count(*)::int from notes n where n.project_id = p.id) as note_count
       from projects p
@@ -201,7 +204,6 @@ export const getProject = createServerFn({ method: "GET" })
         ...base,
         body: text(row.body),
         authorUserId: text(row.user_id),
-        authorBio: text(row.bio),
         authorLocation: text(row.location),
       },
       notes: notes.map((note) => ({

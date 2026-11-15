@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
-import { Cover } from "@/components/cover";
+import { Cover, ProfileAvatar } from "@/components/cover";
 import { Shell } from "@/components/shell";
 import { SignInPanel } from "@/components/sign-in-panel";
 import { StarButton } from "@/components/star-button";
@@ -221,7 +221,16 @@ function ProjectView({
           <h1 className="font-display text-4xl tracking-tight sm:text-5xl">{project.title}</h1>
           <p className="mt-4 max-w-2xl text-lg text-muted">{project.summary}</p>
           <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2">
-            <Link to="/u/$handle" params={{ handle: project.authorHandle }} className="text-sm text-fg hover:underline">
+            <Link
+              to="/u/$handle"
+              params={{ handle: project.authorHandle }}
+              className="inline-flex min-h-11 items-center gap-2 text-sm text-fg hover:underline"
+            >
+              <ProfileAvatar
+                name={project.authorName}
+                image={project.authorAvatarImage}
+                className="h-8 w-8 rounded-full"
+              />
               {project.authorName}
             </Link>
             <span className="text-sm text-subtle">{project.authorRole}</span>
@@ -242,6 +251,7 @@ function ProjectView({
               </Button>
             ) : null}
           </div>
+          {project.authorBio ? <p className="mt-3 max-w-2xl text-sm text-muted">{project.authorBio}</p> : null}
           {project.tags.length ? (
             <p className="mt-4 font-mono text-xs text-subtle">{project.tags.join(" · ")}</p>
           ) : null}

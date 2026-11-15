@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Shell } from "@/components/shell";
-import { Monogram } from "@/components/cover";
+import { ProfileAvatar } from "@/components/cover";
 import { listDirectory } from "@/lib/mainline/api";
 import { countLabel } from "@/lib/mainline/text";
 
@@ -49,10 +49,15 @@ function ExplorePage() {
                 params={{ handle: maker.handle }}
                 className="flex gap-3 rounded-xl border border-line bg-surface p-4"
               >
-                <Monogram name={maker.displayName} />
+                <ProfileAvatar
+                  name={maker.displayName}
+                  image={maker.avatarImage}
+                  className="h-11 w-11 rounded-full"
+                />
                 <span className="min-w-0">
                   <span className="block truncate text-fg">{maker.displayName}</span>
                   <span className="mt-1 block text-sm text-muted">{maker.role || "Builder"}</span>
+                  {maker.bio ? <span className="mt-2 line-clamp-2 block text-sm text-subtle">{maker.bio}</span> : null}
                   <span className="mt-2 block text-sm text-subtle">
                     {countLabel(maker.projectCount, "project")}
                     {maker.location ? ` · ${maker.location}` : ""}

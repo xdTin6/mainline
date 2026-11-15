@@ -13,12 +13,13 @@ export type ProjectCard = {
   authorHandle: string;
   authorName: string;
   authorRole: string;
+  authorBio: string;
+  authorAvatarImage: string;
 };
 
 export type ProjectDetail = ProjectCard & {
   body: string;
   authorUserId: string;
-  authorBio: string;
   authorLocation: string;
 };
 
@@ -115,6 +116,7 @@ export type CommunityNotification = {
 export type Maker = {
   handle: string;
   displayName: string;
+  avatarImage: string;
   role: string;
   bio: string;
   location: string;

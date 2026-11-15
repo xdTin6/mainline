@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Cover } from "@/components/cover";
+import { Cover, ProfileAvatar } from "@/components/cover";
 import { StarButton } from "@/components/star-button";
 import type { ProjectCard as Project } from "@/lib/mainline/types";
 import { formatDay } from "@/lib/mainline/text";
@@ -40,10 +40,17 @@ export function ProjectCard({
         <Link
           to="/u/$handle"
           params={{ handle: project.authorHandle }}
-          className="min-h-11 min-w-0 truncate py-2 text-sm text-muted hover:text-fg"
+          className="flex min-h-11 min-w-0 items-center gap-2 py-2 text-sm text-muted hover:text-fg"
         >
-          {project.authorName}
-          <span className="text-subtle"> · {formatDay(project.updatedAt || project.createdAt)}</span>
+          <ProfileAvatar
+            name={project.authorName}
+            image={project.authorAvatarImage}
+            className="h-7 w-7 rounded-full"
+          />
+          <span className="min-w-0 truncate">
+            {project.authorName}
+            <span className="text-subtle"> · {formatDay(project.updatedAt || project.createdAt)}</span>
+          </span>
         </Link>
         <StarButton projectId={project.id} count={project.starCount} starred={starred} />
       </div>

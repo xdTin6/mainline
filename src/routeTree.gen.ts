@@ -10,9 +10,13 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CollaborateRouteImport } from './routes/collaborate'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as NewRouteImport } from './routes/new'
+import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as PromptsRouteImport } from './routes/prompts'
+import { Route as ShowcaseRouteImport } from './routes/showcase'
 import { Route as YouRouteImport } from './routes/you'
 import { Route as ProjectIdRouteImport } from './routes/project.$id'
 import { Route as UHandleRouteImport } from './routes/u.$handle'
@@ -21,6 +25,11 @@ import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CollaborateRoute = CollaborateRouteImport.update({
+  id: '/collaborate',
+  path: '/collaborate',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ExploreRoute = ExploreRouteImport.update({
@@ -36,6 +45,21 @@ const LoginRoute = LoginRouteImport.update({
 const NewRoute = NewRouteImport.update({
   id: '/new',
   path: '/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PromptsRoute = PromptsRouteImport.update({
+  id: '/prompts',
+  path: '/prompts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShowcaseRoute = ShowcaseRouteImport.update({
+  id: '/showcase',
+  path: '/showcase',
   getParentRoute: () => rootRouteImport,
 } as any)
 const YouRoute = YouRouteImport.update({
@@ -61,9 +85,13 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/collaborate': typeof CollaborateRoute
   '/explore': typeof ExploreRoute
   '/login': typeof LoginRoute
   '/new': typeof NewRoute
+  '/notifications': typeof NotificationsRoute
+  '/prompts': typeof PromptsRoute
+  '/showcase': typeof ShowcaseRoute
   '/you': typeof YouRoute
   '/project/$id': typeof ProjectIdRoute
   '/u/$handle': typeof UHandleRoute
@@ -71,9 +99,13 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/collaborate': typeof CollaborateRoute
   '/explore': typeof ExploreRoute
   '/login': typeof LoginRoute
   '/new': typeof NewRoute
+  '/notifications': typeof NotificationsRoute
+  '/prompts': typeof PromptsRoute
+  '/showcase': typeof ShowcaseRoute
   '/you': typeof YouRoute
   '/project/$id': typeof ProjectIdRoute
   '/u/$handle': typeof UHandleRoute
@@ -82,9 +114,13 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/collaborate': typeof CollaborateRoute
   '/explore': typeof ExploreRoute
   '/login': typeof LoginRoute
   '/new': typeof NewRoute
+  '/notifications': typeof NotificationsRoute
+  '/prompts': typeof PromptsRoute
+  '/showcase': typeof ShowcaseRoute
   '/you': typeof YouRoute
   '/project/$id': typeof ProjectIdRoute
   '/u/$handle': typeof UHandleRoute
@@ -94,9 +130,13 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/collaborate'
     | '/explore'
     | '/login'
     | '/new'
+    | '/notifications'
+    | '/prompts'
+    | '/showcase'
     | '/you'
     | '/project/$id'
     | '/u/$handle'
@@ -104,9 +144,13 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/collaborate'
     | '/explore'
     | '/login'
     | '/new'
+    | '/notifications'
+    | '/prompts'
+    | '/showcase'
     | '/you'
     | '/project/$id'
     | '/u/$handle'
@@ -114,9 +158,13 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/collaborate'
     | '/explore'
     | '/login'
     | '/new'
+    | '/notifications'
+    | '/prompts'
+    | '/showcase'
     | '/you'
     | '/project/$id'
     | '/u/$handle'
@@ -125,9 +173,13 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CollaborateRoute: typeof CollaborateRoute
   ExploreRoute: typeof ExploreRoute
   LoginRoute: typeof LoginRoute
   NewRoute: typeof NewRoute
+  NotificationsRoute: typeof NotificationsRoute
+  PromptsRoute: typeof PromptsRoute
+  ShowcaseRoute: typeof ShowcaseRoute
   YouRoute: typeof YouRoute
   ProjectIdRoute: typeof ProjectIdRoute
   UHandleRoute: typeof UHandleRoute
@@ -141,6 +193,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/collaborate': {
+      id: '/collaborate'
+      path: '/collaborate'
+      fullPath: '/collaborate'
+      preLoaderRoute: typeof CollaborateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/explore': {
@@ -162,6 +221,27 @@ declare module '@tanstack/react-router' {
       path: '/new'
       fullPath: '/new'
       preLoaderRoute: typeof NewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/prompts': {
+      id: '/prompts'
+      path: '/prompts'
+      fullPath: '/prompts'
+      preLoaderRoute: typeof PromptsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/showcase': {
+      id: '/showcase'
+      path: '/showcase'
+      fullPath: '/showcase'
+      preLoaderRoute: typeof ShowcaseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/you': {
@@ -197,9 +277,13 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CollaborateRoute: CollaborateRoute,
   ExploreRoute: ExploreRoute,
   LoginRoute: LoginRoute,
   NewRoute: NewRoute,
+  NotificationsRoute: NotificationsRoute,
+  PromptsRoute: PromptsRoute,
+  ShowcaseRoute: ShowcaseRoute,
   YouRoute: YouRoute,
   ProjectIdRoute: ProjectIdRoute,
   UHandleRoute: UHandleRoute,

@@ -18,14 +18,14 @@
     <style>
       :root {
         color-scheme: dark;
-        --bg: #0c0d0f;
-        --surface: #141518;
-        --elevated: #1b1d21;
-        --fg: #eceae6;
-        --muted: #b7b2a8;
-        --subtle: #8d887f;
-        --line: #2a2c31;
-        --line-strong: #3c3f46;
+        --bg: #090a0f;
+        --surface: #121319;
+        --elevated: #181a22;
+        --fg: #ecebf2;
+        --muted: #b7b7c4;
+        --subtle: #898b9c;
+        --line: #282a35;
+        --line-strong: #3b3e4b;
         --danger: #c45c4a;
         --sans: "IBM Plex Sans", "Avenir Next", "Segoe UI", sans-serif;
         --display: "Newsreader", "Iowan Old Style", Palatino, Georgia, serif;
@@ -37,12 +37,80 @@
       body {
         margin: 0;
         min-height: 100vh;
-        background: var(--bg);
+        background: radial-gradient(ellipse at 50% 8%, #151720 0%, #0c0d13 42%, var(--bg) 100%);
         color: var(--fg);
         font-family: var(--sans);
         font-size: 16px;
         line-height: 1.5;
         -webkit-font-smoothing: antialiased;
+      }
+      .ambient-scene { position: fixed; z-index: 0; inset: 0; overflow: hidden; isolation: isolate; pointer-events: none; }
+      .ambient-stars {
+        position: absolute;
+        inset: 0;
+        opacity: .46;
+        background-image:
+          radial-gradient(1px 1px at 7% 14%, rgba(233,230,255,.7) 50%, transparent 100%),
+          radial-gradient(1px 1px at 16% 61%, rgba(233,230,255,.55) 50%, transparent 100%),
+          radial-gradient(1.5px 1.5px at 24% 31%, rgba(233,230,255,.5) 50%, transparent 100%),
+          radial-gradient(1px 1px at 37% 78%, rgba(233,230,255,.62) 50%, transparent 100%),
+          radial-gradient(1px 1px at 48% 19%, rgba(233,230,255,.45) 50%, transparent 100%),
+          radial-gradient(1.5px 1.5px at 59% 54%, rgba(233,230,255,.58) 50%, transparent 100%),
+          radial-gradient(1px 1px at 73% 27%, rgba(233,230,255,.65) 50%, transparent 100%),
+          radial-gradient(1px 1px at 82% 72%, rgba(233,230,255,.5) 50%, transparent 100%),
+          radial-gradient(1.5px 1.5px at 94% 43%, rgba(233,230,255,.62) 50%, transparent 100%);
+      }
+      .ambient-orb {
+        position: absolute;
+        top: 20%;
+        left: 50%;
+        width: min(58vw, 720px);
+        aspect-ratio: 1;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(180,184,220,.105), transparent 67%);
+        filter: blur(18px);
+        animation: ambient-breathe 18s ease-in-out infinite;
+      }
+      .ambient-horizon {
+        position: absolute;
+        top: 35%;
+        right: 7%;
+        left: 7%;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(205,205,235,.16), transparent);
+        box-shadow: 0 0 24px rgba(180,184,220,.08);
+      }
+      .ambient-ascii {
+        position: absolute;
+        margin: 0;
+        color: rgba(215,218,242,.12);
+        font-family: var(--mono);
+        font-size: clamp(4px, .48vw, 6px);
+        letter-spacing: .04em;
+        line-height: 1.05;
+        white-space: pre;
+        text-shadow: 0 0 8px rgba(205,205,255,.12);
+        user-select: none;
+      }
+      .ambient-ascii--bloom { bottom: -3rem; left: -1vw; transform: rotate(-5deg); }
+      .ambient-ascii--signal { top: 17vh; right: -1vw; color: rgba(215,218,242,.09); transform: rotate(3deg); }
+      .ambient-scan {
+        position: absolute;
+        inset: 0;
+        opacity: .12;
+        background: repeating-linear-gradient(0deg, transparent 0 4px, rgba(220,220,255,.035) 5px);
+      }
+      .ambient-grain {
+        position: absolute;
+        inset: -50%;
+        opacity: .045;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.45'/%3E%3C/svg%3E");
+        background-size: 180px 180px;
+      }
+      .ambient-vignette { position: absolute; inset: 0; background: radial-gradient(ellipse, transparent 36%, rgba(0,0,0,.38) 100%); }
+      @keyframes ambient-breathe {
+        0%, 100% { opacity: .48; transform: translate(-50%, -50%) scale(.94); }
+        50% { opacity: .9; transform: translate(-50%, -50%) scale(1.06); }
       }
       button, input, textarea, select { font: inherit; }
       button:not(:disabled), a, [role="button"] { cursor: pointer; }
@@ -59,7 +127,7 @@
         z-index: 5;
         top: 0;
         border-bottom: 1px solid var(--line);
-        background: rgb(12 13 15 / 94%);
+        background: rgb(9 10 15 / 88%);
         backdrop-filter: blur(16px);
       }
       .topbar-inner, .page, .bottom-inner {
@@ -93,6 +161,7 @@
         background: var(--fg);
         content: "";
       }
+      .brand-mark::after { position: absolute; top: 5px; right: 5px; width: 3px; height: 3px; border-radius: 50%; background: #d7d9f4; box-shadow: 0 0 8px rgba(215,217,244,.8); content: ""; }
       .brand-name { font-family: var(--display); font-size: 23px; letter-spacing: -.03em; }
       .desktop-nav { display: flex; align-items: center; gap: 5px; }
       .nav-link, .auth-link, .quiet-link {
@@ -144,7 +213,9 @@
       .auth-slot { display: flex; flex: 0 0 auto; align-items: center; }
       .user-label { max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-      .page { min-height: calc(100vh - 68px); padding-top: 34px; padding-bottom: 92px; }
+      .page { position: relative; z-index: 1; min-height: calc(100vh - 68px); padding-top: 34px; padding-bottom: 92px; }
+      .page-kicker { display: flex; align-items: center; gap: 9px; margin: 0 0 12px; color: var(--subtle); font-family: var(--mono); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; }
+      .page-kicker::before { width: 18px; height: 1px; background: rgba(215,217,244,.6); box-shadow: 0 0 8px rgba(215,217,244,.35); content: ""; }
       .page-title { margin-bottom: 0; font-family: var(--display); font-size: clamp(38px, 6vw, 56px); font-weight: 500; letter-spacing: -.04em; line-height: 1.04; }
       .lede { max-width: 620px; margin: 13px 0 0; color: var(--muted); }
       .subtle { color: var(--subtle); }
@@ -172,7 +243,8 @@
       .sort-link { display: inline-flex; min-height: 38px; align-items: center; border-bottom: 1px solid transparent; color: var(--subtle); font-size: 13px; }
       .sort-link.active { border-bottom-color: var(--fg); color: var(--fg); }
       .project-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 20px; }
-      .project-card { display: flex; min-width: 0; flex-direction: column; overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+      .project-card { display: flex; min-width: 0; flex-direction: column; overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); transition: border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease; }
+      .project-card:hover { transform: translateY(-2px); border-color: var(--line-strong); box-shadow: 0 12px 36px rgba(0,0,0,.18); }
       .project-card.featured { grid-column: 1 / -1; }
       .project-card-link { display: block; min-width: 0; }
       .project-card-link:hover h2 { text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 4px; }
@@ -193,9 +265,9 @@
         font-family: var(--mono);
         font-size: 11px;
       }
-      .cover.lines { background-image: repeating-linear-gradient(0deg, transparent 0 31px, var(--line-strong) 32px, transparent 33px); }
-      .cover.bars { background-image: repeating-linear-gradient(90deg, transparent 0 28px, var(--line-strong) 29px, transparent 30px); }
-      .cover.diagonal { background-image: repeating-linear-gradient(130deg, transparent 0 39px, var(--line-strong) 40px, transparent 41px); }
+      .cover.lines { background-image: radial-gradient(ellipse at 74% 14%, rgba(181,187,238,.12), transparent 58%), repeating-linear-gradient(0deg, transparent 0 31px, var(--line-strong) 32px, transparent 33px); }
+      .cover.bars { background-image: radial-gradient(ellipse at 24% 8%, rgba(181,187,238,.1), transparent 58%), repeating-linear-gradient(90deg, transparent 0 28px, var(--line-strong) 29px, transparent 30px); }
+      .cover.diagonal { background-image: radial-gradient(ellipse at 65% 30%, rgba(181,187,238,.1), transparent 58%), repeating-linear-gradient(130deg, transparent 0 39px, var(--line-strong) 40px, transparent 41px); }
       .cover.rings::before, .cover.rings::after {
         position: absolute;
         top: -50px;
@@ -206,6 +278,7 @@
         border-radius: 50%;
         content: "";
       }
+      .cover.rings { background-image: radial-gradient(ellipse at 70% 22%, rgba(181,187,238,.12), transparent 60%); }
       .cover.rings::after { top: -20px; right: 16px; width: 120px; height: 120px; box-shadow: 0 0 0 28px transparent, 0 0 0 29px currentColor; }
       .card-copy { padding: 14px 16px 9px; }
       .card-copy h2 { margin: 0; font-family: var(--display); font-size: 25px; font-weight: 500; letter-spacing: -.025em; line-height: 1.15; }
@@ -347,7 +420,11 @@
         .maker-grid { grid-template-columns: 1fr; }
         .detail-aside { order: -1; }
         .project-detail-cover { height: 160px; }
-        .bottom-nav { position: fixed; z-index: 10; right: 0; bottom: 0; left: 0; display: block; border-top: 1px solid var(--line); background: rgb(12 13 15 / 96%); padding-bottom: env(safe-area-inset-bottom); backdrop-filter: blur(16px); }
+        .ambient-orb { top: 11%; width: 94vw; }
+        .ambient-horizon { top: 31%; right: 0; left: 0; }
+        .ambient-ascii { display: none; }
+        .ambient-grain { opacity: .03; }
+        .bottom-nav { position: fixed; z-index: 10; right: 0; bottom: 0; left: 0; display: block; border-top: 1px solid var(--line); background: rgb(9 10 15 / 94%); padding-bottom: env(safe-area-inset-bottom); backdrop-filter: blur(16px); }
         .bottom-inner { display: grid; grid-template-columns: repeat(4, 1fr); min-height: 60px; }
         .bottom-link { display: flex; min-height: 58px; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--subtle); font-size: 11px; }
         .bottom-link[aria-current="page"] { color: var(--fg); }
@@ -372,6 +449,40 @@
     </style>
   </head>
   <body>
+    <div class="ambient-scene" aria-hidden="true">
+      <div class="ambient-stars"></div>
+      <div class="ambient-orb"></div>
+      <div class="ambient-horizon"></div>
+      <pre class="ambient-ascii ambient-ascii--bloom">
+                 .  ·  .
+            .   .:;+xXx+;:.   .
+          .   ..::+@@@@@+::..   .
+             .;+#@@@@@@@@@#+;.
+          .:;+xX@@@#+++X@@@Xx+;:.
+           `;+#@@#+;:. .:;+#@@#+;`
+              `xXx.     .xXx`
+                || .---. ||
+             .--++-'   `-++--.
+          .:;;.  `--. .--`  .;;:.
+            `-.    | |    .-`
+              `----+ +----`
+      </pre>
+      <pre class="ambient-ascii ambient-ascii--signal">
+                ·
+              .:;:.
+            .;+#@#+;.
+           .:x@@|@@x:.
+              |||
+          .---+|+---.
+           `-./|\.-`
+              / \
+           . /   \ .
+          .;:|   |:;.
+      </pre>
+      <div class="ambient-scan"></div>
+      <div class="ambient-grain"></div>
+      <div class="ambient-vignette"></div>
+    </div>
     <header class="topbar">
       <div class="topbar-inner">
         <a class="brand" href="#/" aria-label="Mainline home">
@@ -688,6 +799,7 @@
         const first = projects[0];
         return `<div class="feed-layout">
           <section>
+            <p class="page-kicker">Field record <span aria-hidden="true">/</span> Mainline 001</p>
             <h1 class="page-title">${escapeHtml(title)}</h1>
             <p class="lede">${!current.q && !current.lang && current.sort === "new" ? "A record of projects, not a feed of opinions. Publish the work. Star what you would run." : escapeHtml(countLabel(projects.length, "project"))}</p>
             <form class="mobile-search" id="mobile-search-form" role="search"><label class="sr-only" for="mobile-record-search">Search projects</label><input class="search-input" id="mobile-record-search" name="q" value="${escapeHtml(current.q)}" placeholder="Search projects"></form>

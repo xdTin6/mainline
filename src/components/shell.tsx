@@ -1,13 +1,16 @@
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { Compass, Plus, SquarePen, UserRound } from "lucide-react";
+import { Bell, Compass, Handshake, Lightbulb, Plus, SquarePen, UserRound } from "lucide-react";
 import { UserButton } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { cn } from "@/lib/cn";
+import { unreadNotificationCount } from "@/lib/mainline/community";
 
 const NAV = [
-  { to: "/", label: "Record", icon: SquarePen, match: (path: string) => path === "/" },
+  { to: "/", label: "Feed", icon: SquarePen, match: (path: string) => path === "/" },
   { to: "/explore", label: "Index", icon: Compass, match: (path: string) => path.startsWith("/explore") },
+  { to: "/collaborate", label: "Team up", icon: Handshake, match: (path: string) => path.startsWith("/collaborate") },
+  { to: "/prompts", label: "Prompts", icon: Lightbulb, match: (path: string) => path.startsWith("/prompts") },
   { to: "/new", label: "Publish", icon: Plus, match: (path: string) => path.startsWith("/new") },
   { to: "/you", label: "Bench", icon: UserRound, match: (path: string) => path.startsWith("/you") },
 ] as const;
@@ -21,9 +24,15 @@ export function Shell({ children }: { children: ReactNode }) {
             <Mark />
             <span className="font-display text-xl tracking-tight text-fg">Mainline</span>
           </Link>
-          <nav className="hidden items-center gap-1 sm:flex">
+          <nav className="hidden items-center gap-1 lg:flex">
             <Link to="/explore" className="inline-flex min-h-11 items-center px-2 text-sm text-muted hover:text-fg">
               Index
+            </Link>
+            <Link to="/collaborate" className="inline-flex min-h-11 items-center px-2 text-sm text-muted hover:text-fg">
+              Team up
+            </Link>
+            <Link to="/prompts" className="inline-flex min-h-11 items-center px-2 text-sm text-muted hover:text-fg">
+              Prompts
             </Link>
             <Link to="/you" className="inline-flex min-h-11 items-center px-2 text-sm text-muted hover:text-fg">
               Bench
@@ -37,18 +46,59 @@ export function Shell({ children }: { children: ReactNode }) {
             <Plus className="size-4" />
             Publish
           </Link>
+          <NotificationLink />
           <AuthSlot />
         </div>
       </header>
       <div className="mx-auto max-w-5xl px-4 pt-8 pb-28 sm:pb-16">{children}</div>
       <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-bg sm:hidden">
-        <ul className="grid grid-cols-4">
+        <ul className="grid grid-cols-6">
           {NAV.map((item) => (
             <NavItem key={item.to} {...item} />
           ))}
         </ul>
       </nav>
     </div>
+  );
+}
+
+function NotificationLink() {
+  const { user } = useCurrentUserState();
+  const [unread, setUnread] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!user) {
+      setUnread(0);
+      return;
+    }
+    const load = () => {
+      unreadNotificationCount()
+        .then((count) => {
+          if (!cancelled) setUnread(count);
+        })
+        .catch((cause) => console.error("[shell] Could not load unread notification count.", cause));
+    };
+    const onUpdated = () => load();
+    load();
+    const timer = window.setInterval(load, 60_000);
+    window.addEventListener("mainline-notifications-updated", onUpdated);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+      window.removeEventListener("mainline-notifications-updated", onUpdated);
+    };
+  }, [user?.id]);
+
+  return (
+    <Link
+      to="/notifications"
+      aria-label={unread ? `Notifications, ${unread} unread` : "Notifications"}
+      className="relative inline-flex size-11 shrink-0 items-center justify-center text-muted hover:text-fg"
+    >
+      <Bell className="size-5" />
+      {unread ? <span className="absolute top-1 right-1 grid min-w-4 place-items-center rounded-full bg-fg px-1 text-xs leading-4 text-bg">{unread > 9 ? "9+" : unread}</span> : null}
+    </Link>
   );
 }
 

@@ -19,6 +19,8 @@ import {
   toggleFollow,
   updateProject,
 } from "@/lib/mainline/api";
+import { createBuildUpdate, listProjectUpdates } from "@/lib/mainline/community";
+import type { BuildUpdate } from "@/lib/mainline/types";
 import { LANGUAGES } from "@/lib/mainline/types";
 import { formatDay, safeHttpUrl } from "@/lib/mainline/text";
 
@@ -62,6 +64,13 @@ function ProjectView({
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [note, setNote] = useState("");
   const [noteError, setNoteError] = useState("");
+  const [replyingTo, setReplyingTo] = useState("");
+  const [replyBody, setReplyBody] = useState("");
+  const [replyError, setReplyError] = useState("");
+  const [updates, setUpdates] = useState<BuildUpdate[]>([]);
+  const [updateBody, setUpdateBody] = useState("");
+  const [updateError, setUpdateError] = useState("");
+  const [loadingUpdates, setLoadingUpdates] = useState(true);
   const [busy, setBusy] = useState(false);
   const [relation, setRelation] = useState<{ self: boolean; following: boolean } | null>(null);
   const [followers, setFollowers] = useState<number | null>(null);
@@ -90,6 +99,24 @@ function ProjectView({
     };
   }, [userId, project.id, project.authorHandle]);
 
+  useEffect(() => {
+    let cancel = false;
+    listProjectUpdates({ data: project.id })
+      .then((items) => {
+        if (!cancel) setUpdates(items);
+      })
+      .catch((cause) => {
+        console.error("[project] Could not load build updates.", cause);
+        if (!cancel) setUpdateError("Build updates could not be loaded.");
+      })
+      .finally(() => {
+        if (!cancel) setLoadingUpdates(false);
+      });
+    return () => {
+      cancel = true;
+    };
+  }, [project.id]);
+
   async function onFollow() {
     const result = await toggleFollow({ data: project.authorHandle });
     if (!result.ok) {
@@ -104,14 +131,61 @@ function ProjectView({
     event.preventDefault();
     setBusy(true);
     setNoteError("");
-    const result = await addNote({ data: { projectId: project.id, body: note } });
-    setBusy(false);
-    if (!result.ok) {
-      setNoteError(result.error);
-      return;
+    try {
+      const result = await addNote({ data: { projectId: project.id, body: note } });
+      if (!result.ok) {
+        setNoteError(result.error);
+        return;
+      }
+      setNote("");
+      await onRefresh();
+    } catch (cause) {
+      console.error("[project] Could not post note.", cause);
+      setNoteError("Your note could not be posted. Try again.");
+    } finally {
+      setBusy(false);
     }
-    setNote("");
-    await onRefresh();
+  }
+
+  async function onReply(event: FormEvent, parentId: string) {
+    event.preventDefault();
+    setBusy(true);
+    setReplyError("");
+    try {
+      const result = await addNote({ data: { projectId: project.id, body: replyBody, parentId } });
+      if (!result.ok) {
+        setReplyError(result.error);
+        return;
+      }
+      setReplyBody("");
+      setReplyingTo("");
+      await onRefresh();
+    } catch (cause) {
+      console.error("[project] Could not post reply.", cause);
+      setReplyError("Your reply could not be posted. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onBuildUpdate(event: FormEvent) {
+    event.preventDefault();
+    setBusy(true);
+    setUpdateError("");
+    try {
+      const result = await createBuildUpdate({ data: { projectId: project.id, body: updateBody } });
+      if (!result.ok) {
+        setUpdateError(result.error);
+        return;
+      }
+      setUpdateBody("");
+      setUpdates(await listProjectUpdates({ data: project.id }));
+    } catch (cause) {
+      console.error("[project] Could not post build update.", cause);
+      setUpdateError("Your update could not be posted. Try again.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function onDeleteNote(id: string) {
@@ -185,6 +259,38 @@ function ProjectView({
               <Writeup body={project.body} />
             )}
           </div>
+          <section className="mt-12 border-t border-line pt-8">
+            <div className="flex flex-wrap items-baseline justify-between gap-3">
+              <h2 className="font-display text-2xl tracking-tight">Build log</h2>
+              <span className="text-xs text-subtle">{updates.length} updates</span>
+            </div>
+            {owns ? (
+              <form onSubmit={(event) => void onBuildUpdate(event)} className="mt-5 space-y-3 rounded-lg border border-line bg-surface p-4">
+                <Field label="Share a progress update" hint="What changed, what surprised you, or what is next?">
+                  <TextArea value={updateBody} onChange={(event) => setUpdateBody(event.target.value)} maxLength={800} className="min-h-24" />
+                </Field>
+                {updateError ? <p role="alert" className="text-sm text-danger">{updateError}</p> : null}
+                <Button type="submit" disabled={busy}>{busy ? "Posting…" : "Post update"}</Button>
+              </form>
+            ) : null}
+            {loadingUpdates ? <div className="mt-5 h-20 animate-pulse rounded-lg bg-elevated" /> : null}
+            {updateError && !owns ? <p role="alert" className="mt-4 text-sm text-danger">{updateError}</p> : null}
+            {!loadingUpdates && updates.length === 0 ? <p className="mt-4 text-sm text-subtle">No progress updates yet.</p> : null}
+            {updates.length ? (
+              <ol className="mt-5 space-y-5 border-l border-line pl-5">
+                {updates.map((item) => (
+                  <li key={item.id} className="relative">
+                    <span className="absolute -left-[1.4rem] top-2 size-2 rounded-full bg-line-strong" />
+                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                      <Link to="/u/$handle" params={{ handle: item.authorHandle }} className="text-sm text-fg hover:underline">{item.authorName}</Link>
+                      <span className="text-xs text-subtle">{formatDay(item.createdAt)}</span>
+                    </div>
+                    <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-muted">{item.body}</p>
+                  </li>
+                ))}
+              </ol>
+            ) : null}
+          </section>
           {owns && !editing ? (
             <div className="mt-8 flex flex-wrap gap-3">
               <Button variant="ghost" onClick={() => setEditing(true)}>
@@ -211,7 +317,7 @@ function ProjectView({
             <h2 className="font-display text-2xl tracking-tight">Notes</h2>
             {notes.length === 0 ? <p className="mt-3 text-sm text-subtle">No notes yet.</p> : null}
             <ul className="mt-4 space-y-5">
-              {notes.map((item) => (
+              {notes.filter((item) => !item.parentId).map((item) => (
                 <li key={item.id} className="border-b border-line pb-5">
                   <div className="flex items-baseline justify-between gap-3">
                     <Link to="/u/$handle" params={{ handle: item.authorHandle }} className="text-sm text-fg">
@@ -220,6 +326,19 @@ function ProjectView({
                     <span className="text-xs text-subtle tabular-nums">{formatDay(item.createdAt)}</span>
                   </div>
                   <p className="mt-2 text-sm leading-relaxed text-muted">{item.body}</p>
+                  <div className="mt-2 flex flex-wrap gap-3">
+                    <SignInGate fallback={<Link to="/login" className="inline-flex min-h-11 items-center text-xs text-subtle hover:text-fg">Sign in to reply</Link>}>
+                      <button
+                        type="button"
+                        className="min-h-11 text-xs text-subtle hover:text-fg"
+                        onClick={() => {
+                          setReplyingTo(replyingTo === item.id ? "" : item.id);
+                          setReplyError("");
+                        }}
+                      >
+                        {replyingTo === item.id ? "Cancel reply" : "Reply"}
+                      </button>
+                    </SignInGate>
                   {userId && userId === item.authorUserId ? (
                     <button
                       type="button"
@@ -228,6 +347,36 @@ function ProjectView({
                     >
                       Remove note
                     </button>
+                  ) : null}
+                  </div>
+                  {notes.filter((reply) => reply.parentId === item.id).map((reply) => (
+                    <div key={reply.id} className="ml-4 mt-4 border-l border-line pl-4 sm:ml-8">
+                      <div className="flex items-baseline justify-between gap-3">
+                        <Link to="/u/$handle" params={{ handle: reply.authorHandle }} className="text-sm text-fg">
+                          {reply.authorName}
+                        </Link>
+                        <span className="text-xs text-subtle tabular-nums">{formatDay(reply.createdAt)}</span>
+                      </div>
+                      <p className="mt-2 text-sm leading-relaxed text-muted">{reply.body}</p>
+                      {userId && userId === reply.authorUserId ? (
+                        <button
+                          type="button"
+                          className="mt-2 min-h-11 text-xs text-subtle hover:text-danger"
+                          onClick={() => void onDeleteNote(reply.id)}
+                        >
+                          Remove reply
+                        </button>
+                      ) : null}
+                    </div>
+                  ))}
+                  {replyingTo === item.id ? (
+                    <form onSubmit={(event) => void onReply(event, item.id)} className="ml-4 mt-4 space-y-3 border-l border-line pl-4 sm:ml-8">
+                      <Field label={`Reply to ${item.authorName}`}>
+                        <TextArea value={replyBody} onChange={(event) => setReplyBody(event.target.value)} maxLength={800} className="min-h-20" />
+                      </Field>
+                      {replyError ? <p role="alert" className="text-sm text-danger">{replyError}</p> : null}
+                      <Button type="submit" disabled={busy}>{busy ? "Sending…" : "Post reply"}</Button>
+                    </form>
                   ) : null}
                 </li>
               ))}

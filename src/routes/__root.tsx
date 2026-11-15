@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { createRootRoute, HeadContent, Outlet, Scripts, redirect } from "@tanstack/react-router";
+import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/lib/auth/provider";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
@@ -9,9 +9,6 @@ import appCss from "../styles.css?url";
 const APP_NAME = "Mainline";
 
 export const Route = createRootRoute({
-  beforeLoad: ({ location }) => {
-    if (location.pathname !== "/") throw redirect({ to: "/" });
-  },
   head: () => ({
     meta: [
       { charSet: "utf-8" },

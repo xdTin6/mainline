@@ -43,7 +43,7 @@ export function ProjectCard({
           className="min-h-11 min-w-0 truncate py-2 text-sm text-muted hover:text-fg"
         >
           {project.authorName}
-          <span className="text-subtle"> · {formatDay(project.createdAt)}</span>
+          <span className="text-subtle"> · {formatDay(project.updatedAt || project.createdAt)}</span>
         </Link>
         <StarButton projectId={project.id} count={project.starCount} starred={starred} />
       </div>

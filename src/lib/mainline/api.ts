@@ -3,6 +3,7 @@ import { getSql } from "@/lib/db";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { cleanTags, safeHttpUrl, slugHandle } from "@/lib/mainline/text";
 import { LANGUAGES, type Directory, type Mine, type Note, type Profile, type ProjectCard, type ProjectDetail } from "@/lib/mainline/types";
+import { notifyFollowers } from "@/lib/mainline/community";
 
 type Row = Record<string, unknown>;
 
@@ -36,6 +37,7 @@ function card(row: Row): ProjectCard {
     repoUrl: text(row.repo_url),
     demoUrl: text(row.demo_url),
     createdAt: text(row.created_at),
+    updatedAt: text(row.updated_at),
     starCount: num(row.star_count),
     noteCount: num(row.note_count),
     authorHandle: text(row.handle),
@@ -46,7 +48,7 @@ function card(row: Row): ProjectCard {
 
 const FEED_SELECT = `
   select
-    p.id, p.title, p.summary, p.language, p.tags, p.repo_url, p.demo_url, p.created_at,
+    p.id, p.title, p.summary, p.language, p.tags, p.repo_url, p.demo_url, p.created_at, p.updated_at,
     a.handle, a.display_name, a.role,
     (select count(*)::int from stars s where s.project_id = p.id) as star_count,
     (select count(*)::int from notes n where n.project_id = p.id) as note_count
@@ -54,11 +56,17 @@ const FEED_SELECT = `
   join profiles a on a.user_id = p.user_id
 `;
 
-function feedQuery(sort: "new" | "stars") {
-  const order = sort === "stars" ? "star_count desc, created_at desc" : "created_at desc";
+function feedQuery(sort: "new" | "stars" | "updated") {
+  const order =
+    sort === "stars"
+      ? "star_count desc, created_at desc"
+      : sort === "updated"
+        ? "updated_at desc, created_at desc"
+        : "created_at desc";
   return `
     select * from (${FEED_SELECT}) t
     where ($1 = '' or language = $1)
+      and ($4 = '' or tags ilike $5)
       and (
         $2 = ''
         or title ilike $3
@@ -74,18 +82,35 @@ function feedQuery(sort: "new" | "stars") {
 
 export const listFeed = createServerFn({ method: "GET" })
   .validator((input: unknown) => {
-    const raw = (input ?? {}) as { q?: unknown; lang?: unknown; sort?: unknown };
+    const raw = (input ?? {}) as { q?: unknown; lang?: unknown; sort?: unknown; tag?: unknown };
     const q = text(raw.q).trim().slice(0, 80);
     const lang = text(raw.lang).trim().slice(0, 40);
-    const sort = raw.sort === "stars" ? "stars" : "new";
-    return { q, lang, sort } as const;
+    const tag = text(raw.tag).trim().toLowerCase().slice(0, 24);
+    const sort = raw.sort === "stars" || raw.sort === "updated" ? raw.sort : "new";
+    return { q, lang, tag, sort } as const;
   })
   .handler(async ({ data }) => {
     const sql = await getSql();
     const pattern = `%${data.q.replace(/[%_\\]/g, "")}%`;
-    const rows = await sql.query<Row>(feedQuery(data.sort), [data.lang, data.q, pattern]);
+    const tagPattern = `%${data.tag.replace(/[%_\\]/g, "")}%`;
+    const rows = await sql.query<Row>(feedQuery(data.sort), [data.lang, data.q, pattern, data.tag, tagPattern]);
     return rows.map(card);
   });
+
+export const listShowcase = createServerFn({ method: "GET" }).handler(async () => {
+  const sql = await getSql();
+  const recent = await sql.query<Row>(
+    `select * from (${FEED_SELECT}) t
+     where created_at >= now() - interval '7 days'
+     order by star_count desc, created_at desc
+     limit 12`,
+  );
+  const rows =
+    recent.length > 0
+      ? recent
+      : await sql.query<Row>(`select * from (${FEED_SELECT}) t order by star_count desc, created_at desc limit 12`);
+  return rows.map(card);
+});
 
 export const listDirectory = createServerFn({ method: "GET" }).handler(async (): Promise<Directory> => {
   const sql = await getSql();
@@ -153,7 +178,7 @@ export const getProject = createServerFn({ method: "GET" })
     const sql = await getSql();
     const rows = await sql<Row>`
       select p.id, p.user_id, p.title, p.summary, p.body, p.language, p.tags,
-        p.repo_url, p.demo_url, p.created_at,
+        p.repo_url, p.demo_url, p.created_at, p.updated_at,
         a.handle, a.display_name, a.role, a.bio, a.location,
         (select count(*)::int from stars s where s.project_id = p.id) as star_count,
         (select count(*)::int from notes n where n.project_id = p.id) as note_count
@@ -164,7 +189,7 @@ export const getProject = createServerFn({ method: "GET" })
     const row = rows[0];
     if (!row) return null;
     const notes = await sql<Row>`
-      select n.id, n.body, n.created_at, n.user_id, a.handle, a.display_name
+      select n.id, n.body, n.created_at, n.user_id, n.parent_note_id, a.handle, a.display_name
       from notes n
       join profiles a on a.user_id = n.user_id
       where n.project_id = ${id}
@@ -186,6 +211,7 @@ export const getProject = createServerFn({ method: "GET" })
         authorUserId: text(note.user_id),
         authorHandle: text(note.handle),
         authorName: text(note.display_name),
+        parentId: text(note.parent_note_id) || null,
       })),
     };
   });
@@ -475,6 +501,7 @@ export const publishProject = createServerFn({ method: "POST" })
         ${parsed.language}, ${parsed.tags}, ${parsed.repoUrl}, ${parsed.demoUrl}
       )
     `;
+    await notifyFollowers(sql, context.userId, "project", id);
     return { ok: true as const, id, handle };
   });
 
@@ -530,6 +557,13 @@ export const toggleStar = createServerFn({ method: "POST" })
       await sql`delete from stars where user_id = ${context.userId} and project_id = ${id}`;
     } else {
       await sql`insert into stars (user_id, project_id) values (${context.userId}, ${id})`;
+      const owner = await sql<{ user_id: string }>`select user_id from projects where id = ${id}`;
+      if (owner[0] && owner[0].user_id !== context.userId) {
+        await sql`
+          insert into notifications (id, user_id, actor_id, kind, project_id)
+          values (${crypto.randomUUID()}, ${owner[0].user_id}, ${context.userId}, 'star', ${id})
+        `;
+      }
     }
     const counts = await sql<{ n: number }>`select count(*)::int as n from stars where project_id = ${id}`;
     return { ok: true as const, starred: !existing[0], starCount: num(counts[0]?.n) };
@@ -553,6 +587,10 @@ export const toggleFollow = createServerFn({ method: "POST" })
       await sql`delete from follows where follower_id = ${context.userId} and following_id = ${target}`;
     } else {
       await sql`insert into follows (follower_id, following_id) values (${context.userId}, ${target})`;
+      await sql`
+        insert into notifications (id, user_id, actor_id, kind)
+        values (${crypto.randomUUID()}, ${target}, ${context.userId}, 'follow')
+      `;
     }
     const counts = await sql<{ n: number }>`
       select count(*)::int as n from follows where following_id = ${target}
@@ -563,10 +601,11 @@ export const toggleFollow = createServerFn({ method: "POST" })
 export const addNote = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .validator((input: unknown) => {
-    const raw = (input ?? {}) as { projectId?: unknown; body?: unknown };
+    const raw = (input ?? {}) as { projectId?: unknown; body?: unknown; parentId?: unknown };
     return {
       projectId: text(raw.projectId).slice(0, 80),
       body: text(raw.body).trim().slice(0, 800),
+      parentId: text(raw.parentId).slice(0, 80),
     };
   })
   .handler(async ({ context, data }) => {
@@ -576,11 +615,29 @@ export const addNote = createServerFn({ method: "POST" })
     if (!me[0]) return { ok: false as const, error: "Claim a handle on your bench before leaving a note." };
     const project = await sql`select id from projects where id = ${data.projectId}`;
     if (!project[0]) return { ok: false as const, error: "Project not found." };
+    let recipientId = "";
+    if (data.parentId) {
+      const parent = await sql<{ user_id: string }>`
+        select user_id from notes
+        where id = ${data.parentId} and project_id = ${data.projectId} and parent_note_id is null
+      `;
+      if (!parent[0]) return { ok: false as const, error: "That discussion note is not available." };
+      recipientId = parent[0].user_id;
+    } else {
+      const owner = await sql<{ user_id: string }>`select user_id from projects where id = ${data.projectId}`;
+      recipientId = text(owner[0]?.user_id);
+    }
     const id = crypto.randomUUID();
     await sql`
-      insert into notes (id, project_id, user_id, body)
-      values (${id}, ${data.projectId}, ${context.userId}, ${data.body})
+      insert into notes (id, project_id, user_id, body, parent_note_id)
+      values (${id}, ${data.projectId}, ${context.userId}, ${data.body}, ${data.parentId || null})
     `;
+    if (recipientId && recipientId !== context.userId) {
+      await sql`
+        insert into notifications (id, user_id, actor_id, kind, project_id)
+        values (${crypto.randomUUID()}, ${recipientId}, ${context.userId}, ${data.parentId ? "reply" : "note"}, ${data.projectId})
+      `;
+    }
     return { ok: true as const, id };
   });
 

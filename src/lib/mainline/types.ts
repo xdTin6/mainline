@@ -7,6 +7,7 @@ export type ProjectCard = {
   repoUrl: string;
   demoUrl: string;
   createdAt: string;
+  updatedAt: string;
   starCount: number;
   noteCount: number;
   authorHandle: string;
@@ -28,6 +29,87 @@ export type Note = {
   authorUserId: string;
   authorHandle: string;
   authorName: string;
+  parentId: string | null;
+};
+
+export type BuildUpdate = {
+  id: string;
+  body: string;
+  createdAt: string;
+  authorHandle: string;
+  authorName: string;
+};
+
+export type ActivityItem = {
+  id: string;
+  kind: "project" | "update";
+  createdAt: string;
+  projectId: string;
+  projectTitle: string;
+  summary: string;
+  language: string;
+  body: string;
+  authorHandle: string;
+  authorName: string;
+};
+
+export type CollabPost = {
+  id: string;
+  title: string;
+  description: string;
+  skills: string[];
+  status: "open" | "closed";
+  createdAt: string;
+  authorUserId: string;
+  authorHandle: string;
+  authorName: string;
+  projectId: string;
+  projectTitle: string;
+  interestCount: number;
+};
+
+export type CollabInterest = {
+  postId: string;
+  message: string;
+  createdAt: string;
+  authorHandle: string;
+  authorName: string;
+};
+
+export type Prompt = {
+  key: string;
+  title: string;
+  description: string;
+  skills: string[];
+  weekLabel: string;
+  endsAt: string;
+};
+
+export type PromptEntry = {
+  id: string;
+  body: string;
+  repoUrl: string;
+  createdAt: string;
+  authorUserId: string;
+  authorHandle: string;
+  authorName: string;
+  projectId: string;
+  projectTitle: string;
+  voteCount: number;
+  voted: boolean;
+};
+
+export type CommunityNotification = {
+  id: string;
+  kind: string;
+  createdAt: string;
+  readAt: string;
+  actorHandle: string;
+  actorName: string;
+  projectId: string;
+  projectTitle: string;
+  updateId: string;
+  collabPostId: string;
 };
 
 export type Maker = {

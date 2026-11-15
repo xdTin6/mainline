@@ -87,3 +87,60 @@ export function Monogram({ name, className }: { name: string; className?: string
     </span>
   );
 }
+
+export function ProfileAvatar({
+  name,
+  image,
+  className,
+}: {
+  name: string;
+  image: string;
+  className?: string;
+}) {
+  if (!image) return <Monogram name={name} className={className} />;
+  return (
+    <img
+      src={image}
+      alt={`${name}'s profile`}
+      className={cn("h-11 w-11 shrink-0 rounded-full border border-line object-cover", className)}
+    />
+  );
+}
+
+export function ProfileBanner({
+  image,
+  className,
+  alt = "",
+}: {
+  image: string;
+  className?: string;
+  alt?: string;
+}) {
+  return (
+    <div className={cn("relative isolate overflow-hidden bg-elevated text-line-strong", className)}>
+      {image ? (
+        <img src={image} alt={alt} className="absolute inset-0 h-full w-full object-cover" />
+      ) : (
+        <svg
+          className="absolute inset-0 h-full w-full"
+          viewBox="0 0 640 220"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          {Array.from({ length: 10 }, (_, index) => (
+            <line
+              key={index}
+              x1={-80 + index * 80}
+              y1="220"
+              x2={100 + index * 80}
+              y2="0"
+              stroke="currentColor"
+              strokeWidth="1"
+            />
+          ))}
+          <circle cx="520" cy="24" r="96" fill="none" stroke="currentColor" strokeWidth="1" />
+        </svg>
+      )}
+    </div>
+  );
+}

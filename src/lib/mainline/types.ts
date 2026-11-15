@@ -149,6 +149,12 @@ export type Profile = {
   role: string;
   location: string;
   website: string;
+  avatarImage: string;
+  bannerImage: string;
+  githubHandle: string;
+  linkedinUrl: string;
+  xHandle: string;
+  blueskyHandle: string;
   followerCount: number;
   followingCount: number;
   projects: ProjectCard[];
@@ -162,6 +168,12 @@ export type Mine = {
     role: string;
     location: string;
     website: string;
+    avatarImage: string;
+    bannerImage: string;
+    githubHandle: string;
+    linkedinUrl: string;
+    xHandle: string;
+    blueskyHandle: string;
   } | null;
   projects: { id: string; title: string; language: string }[];
   starred: { id: string; title: string; authorHandle: string }[];

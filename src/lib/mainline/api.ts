@@ -222,6 +222,7 @@ export const getProfile = createServerFn({ method: "GET" })
     const sql = await getSql();
     const rows = await sql<Row>`
       select a.user_id, a.handle, a.display_name, a.bio, a.role, a.location, a.website,
+        a.avatar_image, a.banner_image, a.github_handle, a.linkedin_url, a.x_handle, a.bluesky_handle,
         (select count(*)::int from follows f where f.following_id = a.user_id) as follower_count,
         (select count(*)::int from follows f where f.follower_id = a.user_id) as following_count
       from profiles a
@@ -241,6 +242,12 @@ export const getProfile = createServerFn({ method: "GET" })
       role: text(row.role),
       location: text(row.location),
       website: text(row.website),
+      avatarImage: text(row.avatar_image),
+      bannerImage: text(row.banner_image),
+      githubHandle: text(row.github_handle),
+      linkedinUrl: text(row.linkedin_url),
+      xHandle: text(row.x_handle),
+      blueskyHandle: text(row.bluesky_handle),
       followerCount: num(row.follower_count),
       followingCount: num(row.following_count),
       projects: projects.map(card),
@@ -283,7 +290,8 @@ export const getMine = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<Mine> => {
     const sql = await getSql();
     const profiles = await sql<Row>`
-      select handle, display_name, bio, role, location, website
+      select handle, display_name, bio, role, location, website,
+        avatar_image, banner_image, github_handle, linkedin_url, x_handle, bluesky_handle
       from profiles where user_id = ${context.userId}
     `;
     const profileRow = profiles[0];
@@ -318,6 +326,12 @@ export const getMine = createServerFn({ method: "GET" })
             role: text(profileRow.role),
             location: text(profileRow.location),
             website: text(profileRow.website),
+            avatarImage: text(profileRow.avatar_image),
+            bannerImage: text(profileRow.banner_image),
+            githubHandle: text(profileRow.github_handle),
+            linkedinUrl: text(profileRow.linkedin_url),
+            xHandle: text(profileRow.x_handle),
+            blueskyHandle: text(profileRow.bluesky_handle),
           }
         : null,
       projects: projects.map((row) => ({
@@ -344,6 +358,12 @@ type ProfileInput = {
   location: string;
   bio: string;
   website: string;
+  avatarImage: string;
+  bannerImage: string;
+  githubHandle: string;
+  linkedinUrl: string;
+  xHandle: string;
+  blueskyHandle: string;
 };
 
 function readProfile(input: unknown): ProfileInput | { error: string } {
@@ -354,9 +374,38 @@ function readProfile(input: unknown): ProfileInput | { error: string } {
   const location = text(raw.location).trim().slice(0, 60);
   const bio = text(raw.bio).trim().slice(0, 280);
   const websiteRaw = text(raw.website).trim().slice(0, 200);
+  const avatarImage = text(raw.avatarImage);
+  const bannerImage = text(raw.bannerImage);
+  const githubHandle = text(raw.githubHandle).trim().replace(/^@/, "").slice(0, 39);
+  const linkedinRaw = text(raw.linkedinUrl).trim().slice(0, 200);
+  const xHandle = text(raw.xHandle).trim().replace(/^@/, "").slice(0, 15);
+  const blueskyHandle = text(raw.blueskyHandle).trim().replace(/^@/, "").slice(0, 253);
   if (displayName.length < 2) return { error: "Add the name you want on the record." };
   if (handle.length < 2) return { error: "Handle needs at least two letters or numbers." };
   if (websiteRaw && !safeHttpUrl(websiteRaw)) return { error: "Website must be an http or https link." };
+  if (!validProfileImage(avatarImage, 260_000)) {
+    return { error: "Profile photo is too large or invalid. Choose it again." };
+  }
+  if (!validProfileImage(bannerImage, 600_000)) {
+    return { error: "Banner image is too large or invalid. Choose it again." };
+  }
+  if (githubHandle && !/^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,37}[a-zA-Z0-9])?$/.test(githubHandle)) {
+    return { error: "Enter a valid GitHub username." };
+  }
+  if (xHandle && !/^[a-zA-Z0-9_]{1,15}$/.test(xHandle)) {
+    return { error: "Enter a valid X username." };
+  }
+  if (blueskyHandle && !/^[a-zA-Z0-9](?:[a-zA-Z0-9.-]{0,251}[a-zA-Z0-9])?$/.test(blueskyHandle)) {
+    return { error: "Enter a valid Bluesky handle." };
+  }
+  const linkedinUrl = linkedinRaw ? safeHttpUrl(linkedinRaw) : null;
+  if (
+    linkedinRaw &&
+    (!linkedinUrl ||
+      !["linkedin.com", "www.linkedin.com"].includes(new URL(linkedinUrl).hostname.toLowerCase()))
+  ) {
+    return { error: "LinkedIn must be a valid linkedin.com profile link." };
+  }
   return {
     displayName,
     handle,
@@ -364,7 +413,20 @@ function readProfile(input: unknown): ProfileInput | { error: string } {
     location,
     bio,
     website: websiteRaw ? (safeHttpUrl(websiteRaw) ?? "") : "",
+    avatarImage,
+    bannerImage,
+    githubHandle,
+    linkedinUrl: linkedinUrl ?? "",
+    xHandle,
+    blueskyHandle,
   };
+}
+
+function validProfileImage(value: string, maxLength: number): boolean {
+  return (
+    value === "" ||
+    (value.length <= maxLength && /^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(value))
+  );
 }
 
 async function handleTaken(handle: string, userId: string) {
@@ -392,15 +454,26 @@ export const saveProfile = createServerFn({ method: "POST" })
             role = ${parsed.role},
             location = ${parsed.location},
             bio = ${parsed.bio},
-            website = ${parsed.website}
+            website = ${parsed.website},
+            avatar_image = ${parsed.avatarImage},
+            banner_image = ${parsed.bannerImage},
+            github_handle = ${parsed.githubHandle},
+            linkedin_url = ${parsed.linkedinUrl},
+            x_handle = ${parsed.xHandle},
+            bluesky_handle = ${parsed.blueskyHandle}
         where user_id = ${context.userId}
       `;
     } else {
       await sql`
-        insert into profiles (user_id, handle, display_name, role, location, bio, website)
+        insert into profiles (
+          user_id, handle, display_name, role, location, bio, website,
+          avatar_image, banner_image, github_handle, linkedin_url, x_handle, bluesky_handle
+        )
         values (
-          ${context.userId}, ${parsed.handle}, ${parsed.displayName},
-          ${parsed.role}, ${parsed.location}, ${parsed.bio}, ${parsed.website}
+          ${context.userId}, ${parsed.handle}, ${parsed.displayName}, ${parsed.role},
+          ${parsed.location}, ${parsed.bio}, ${parsed.website}, ${parsed.avatarImage},
+          ${parsed.bannerImage}, ${parsed.githubHandle}, ${parsed.linkedinUrl},
+          ${parsed.xHandle}, ${parsed.blueskyHandle}
         )
       `;
     }
